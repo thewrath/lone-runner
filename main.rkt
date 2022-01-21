@@ -2,12 +2,17 @@
 
 (require r-cade)
 
+(define DEBUG #t)
+
 (define M-WIDTH 256)
 (define M-HEIGHT 256)
 
 (define B-SIZE 8)
 
 (define P-SPEED 1)
+(define GRAVITY 2)
+
+(define debug-text "debug")
 
 ; Levels definitons
 (define asset/levels #(
@@ -38,11 +43,11 @@
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "s" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
                          )))
 
@@ -75,7 +80,7 @@
 ; Define all primitive of our game
 (struct point (x y) #:transparent)
 (struct block (position type) #:transparent)
-(struct player (position) #:transparent)
+(struct player (position block) #:transparent)
 (struct enemy (position) #:transparent)
 (struct level (indice gold) #:transparent)
 (struct world (player enemies level) #:transparent)
@@ -91,21 +96,26 @@
 (define (actions/right) (action btn-right #t))
 (define (actions/down) (action btn-down #t))
 (define (actions/left) (action btn-left #t))
+(define (actions/display-current-block) (action btn-z))
 
 (define (update/world w) 
   (define e (world-enemies w))
   (define l (world-level w))
   (define p (update/player (world-player w) (level-indice l)))
-  (world p e l))
+  (begin 
+    (when ((actions/display-current-block))
+      (set! debug-text (get-block (level-indice l) (player-position p) #:mode "upper")))
+    (world p e l)))
 
 (define (update/player p l)
-  (define pos (player-position p))
-  (define new-player (move-player (player (apply-gravity pos))))
-  (if (not (on-wall? (player-position new-player)))
-      new-player
-      p))
+  (define new-player (apply-gravity (move-player p l)))
+  (define wall (get-wall p))
+  (if (not (null? wall))
+      ; todo : faire reculer le joueur vers le haut ou le bas en fonction de ou ce situe le block par rapport au joueur :
+      ; - faire une fonction qui prend deux block et qui donne la direction du premier par rapport au deuxieme.
+      new-player))
 
-(define (move-player p)
+(define (move-player p l)
   (define x (point-x (player-position p)))
   (define y (point-y (player-position p)))
   (define dx 0)
@@ -120,35 +130,23 @@
     (set! dx -1))
   (player (point 
             (+ x (* P-SPEED dx))
-            (+ y (* P-SPEED dy)))))
-
-; Center position on a nerest block
-; l for next position
-; np for next position
-; lp for last position
-(define (center-on-level-block l np lp)
-  (define block-round-mode (if (< (point-x np) (point-x lp)) "lower" "upper"))
-  (define block (get-block l np #:mode block-round-mode)) 
-  (if (null? block)
-      np
-      np))
+            (+ y (* P-SPEED dy)))(get-block l (player-position p) #:mode "upper")))
 
 ; Check that the position does not exceed the walls
-(define (on-wall? p)
-  (let ([x (point-x p)]
-        [y (point-y p)])
-  (or (< x B-SIZE) ; left
-      (< y B-SIZE) ; up
-      (> x (- M-WIDTH (* 2 B-SIZE))) ; right
-      (> y (- M-HEIGHT (* 2 B-SIZE)))))) ; down
+(define (get-wall p)
+  (if (equal? "w" (block-type (player-block p)))
+      (player-block b)
+      null))
 
-; Apply gravity to a position
+; Apply gravity to a player/enemy
 (define (apply-gravity p)
-  (if (< (point-y p) (- M-HEIGHT (* 2 B-SIZE)))
-      (point 
-        (point-x p)
-        (add1 (point-y p)) )
-      p))
+  (let* ([position (player-position p)]
+        [x (point-x position)]
+        [y (point-y position)]
+        [b (player-block p)])
+    (if (and (< y (- M-HEIGHT (* 2 B-SIZE))) (not (equal? "l" (block-type b))))
+        (player (point x (+ y GRAVITY)) b)
+        p)))
 
 ;; DRAW
 ; Little helper to draw color palette 
@@ -210,7 +208,7 @@
 
 ;; INIT
 (define (init)
-  (define p (player (point 10 10)))
+  (define p (player (point 10 10) null))
   (define e (list (enemy (point 10 10))))
   (define l (level 0 100))
   (world p e l))
@@ -220,7 +218,8 @@
 (define (game-loop)
   (cls)
   (set! my-world (update/world my-world))
-  (draw/world my-world))
+  (draw/world my-world)
+  (and DEBUG (text 50 50 debug-text)))
 ;(draw 50 0 (hash-ref asset/sprites "player"))
 
 (run game-loop M-WIDTH M-HEIGHT #:scale 2 #:shader #f)
