@@ -8,6 +8,7 @@
 (define M-HEIGHT 256)
 
 (define B-SIZE 8)
+(define HALF-B-SIZE (/ B-SIZE 2))
 
 (define P-SPEED 1)
 (define GRAVITY 2)
@@ -78,9 +79,9 @@
                               #b01111110)))
 
 ; Define all primitive of our game
-(struct point (x y) #:transparent)
+(struct point (x y) #:transparent #:mutable)
 (struct block (position type) #:transparent)
-(struct player (position block) #:transparent)
+(struct player (position block) #:transparent #:mutable)
 (struct enemy (position) #:transparent)
 (struct level (indice gold) #:transparent)
 (struct world (player enemies level) #:transparent)
@@ -89,6 +90,9 @@
   (and 
     (= (point-x a) (point-x b)) 
    	(= (point-y a) (point-y b))))
+
+(define (point-add a b)
+  (point (+ (point-x a) (point-x b)) (+ (point-y a) (point-y b))))
 
 ;; UPDATE
 ; Player actions
@@ -109,11 +113,14 @@
 
 (define (update/player p l)
   (define new-player (apply-gravity (move-player p l)))
-  (define wall (get-wall p))
+  (define wall (get-wall new-player))
   (if (not (null? wall))
-      ; todo : faire reculer le joueur vers le haut ou le bas en fonction de ou ce situe le block par rapport au joueur :
-      ; - faire une fonction qui prend deux block et qui donne la direction du premier par rapport au deuxieme.
-      new-player))
+    (let ([dir (get-block-direction (player-block p) (player-block new-player))])
+      (set! debug-text dir)
+      (player 
+        (point-add (player-position new-player) dir) 
+        (player-block new-player)))
+    new-player))
 
 (define (move-player p l)
   (define x (point-x (player-position p)))
@@ -131,12 +138,6 @@
   (player (point 
             (+ x (* P-SPEED dx))
             (+ y (* P-SPEED dy)))(get-block l (player-position p) #:mode "upper")))
-
-; Check that the position does not exceed the walls
-(define (get-wall p)
-  (if (equal? "w" (block-type (player-block p)))
-      (player-block b)
-      null))
 
 ; Apply gravity to a player/enemy
 (define (apply-gravity p)
@@ -205,6 +206,27 @@
                     (when (is-nearest? (point-x (block-position current-block)) (point-y (block-position current-block)))
                       (set! b current-block)))))
   b)
+
+(define (get-wall p)
+  (define b (player-block p))
+  (if (and (not (null? b)) (equal? "w" (block-type b)))
+      b
+      null))
+
+; Get direction from cb block to db block
+(define (get-block-direction cb db)
+  (let ([cb-pos (block-position cb)]
+        [db-pos (block-position db)]
+        [dir (point 0 0)])
+    (when (> (point-x cb-pos) (point-x db-pos))
+      (set-point-x! dir HALF-B-SIZE))
+    (when (< (point-x cb-pos) (point-x db-pos))
+      (set-point-x! dir (- 0 HALF-B-SIZE)))
+    (when (> (point-y cb-pos) (point-y db-pos))
+      (set-point-y! dir HALF-B-SIZE))
+    (when (< (point-y cb-pos) (point-y db-pos))
+      (set-point-y! dir (- 0 HALF-B-SIZE)))
+    dir))
 
 ;; INIT
 (define (init)
