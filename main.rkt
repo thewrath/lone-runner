@@ -75,13 +75,13 @@
                               #b01000010
                               #b01000010)
                         "db" '(
-                              #b11111111
+                              #b01111110
                               #b10000001
                               #b10010001
                               #b10111001
                               #b10010001
                               #b10000001
-                              #b11111111)
+                              #b01111110)
                         "w" '(
                               #b01111110
                               #b10000001	
@@ -126,7 +126,17 @@
 
 (define (update/player p l)
   (define new-player (apply-gravity (move-player p l) l))
-  new-player)
+  (if (point-equals? (player-position p) (player-position new-player))
+      (center-player-on-block new-player)
+      new-player))
+
+(define (center-player-on-block p)
+  (let ([b (player-block p)])
+    (if (null? b)
+        p
+        (player (point (point-x (block-position b))
+                       (point-y (block-position b)))
+                b))))
 
 (define (move-player p l)
   (let ([x (point-x (player-position p))]
