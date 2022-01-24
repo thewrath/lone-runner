@@ -11,12 +11,16 @@
 (define HALF-B-SIZE (/ B-SIZE 2))
 
 (define P-SPEED 1)
-(define GRAVITY 1)
+(define GRAVITY 2)
 
 (define UP 0)
 (define RIGHT 1)
 (define DOWN 2)
 (define LEFT 3)
+
+(define PLAYER-COLOR 2)
+(define MAP-COLOR 1)
+(define ENEMY-COLOR 3)
 
 (define debug-text "debug")
 
@@ -41,19 +45,19 @@
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         #("w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "w" "l" "w" "w" "w" "w" "w")
+                         #("w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         #("w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
                          #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         #("w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          #("w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
                          )))
 
@@ -82,6 +86,14 @@
                               #b10010001
                               #b10000001
                               #b01111110)
+                        "en" '(
+                              #b10111101
+                              #b01011010
+                              #b00011000
+                              #b01111110
+                              #b01000010
+                              #b01000010
+                              #b01000010)
                         "w" '(
                               #b01111110
                               #b10000001	
@@ -116,19 +128,15 @@
 (define (actions/display-current-block) (action btn-z))
 
 (define (update/world w) 
-  (define e (world-enemies w))
   (define l (world-level w))
+  (define e (update/enemies (world-enemies w) (level-indice l)))
   (define p (update/player (world-player w) (level-indice l)))
   (begin 
     (when ((actions/display-current-block))
       (set! debug-text (get-block (level-indice l) (player-position p) #:mode "upper")))
     (world p e l)))
 
-(define (update/player p l)
-  (define new-player (apply-gravity (move-player p l) l))
-  (if (point-equals? (player-position p) (player-position new-player))
-      (center-player-on-block new-player)
-      new-player))
+;; Entity
 
 (define (center-player-on-block p)
   (let ([b (player-block p)])
@@ -137,23 +145,6 @@
         (player (point (point-x (block-position b))
                        (point-y (block-position b)))
                 b))))
-
-(define (move-player p l)
-  (let ([x (point-x (player-position p))]
-        [y (point-y (player-position p))]
-        [dx 0]
-        [dy 0])
-    (when (and ((actions/up)) (can-player-go? p l UP))
-      (set! dy -1))
-    (when (and ((actions/right)) (can-player-go? p l RIGHT))
-      (set! dx 1))
-    (when (and ((actions/down)) (can-player-go? p l DOWN))
-      (set! dy 1))
-    (when (and ((actions/left)) (can-player-go? p l LEFT))
-      (set! dx -1))
-    (player (point
-              (+ x (* P-SPEED dx))
-              (+ y (* P-SPEED dy)))(get-block l (player-position p) #:mode "upper"))))
 
 (define (can-player-go? p l dir)
   (let* ([blocks (get-blocks-around-player p l)]
@@ -172,6 +163,53 @@
         (player (point x (+ y GRAVITY)) b)
         p)))
 
+(define (get-blocks-around-player p l)
+  (if (null? (player-block p))
+      (list)
+      (let* ([pb (player-block p)]
+             [pbc (point-x (block-coords pb))]
+             [pbl (point-y (block-coords pb))])
+      (map (lambda (b) (if (block-in-map? b l) 
+                           (begin (set-block-type! b (get-block-type b l)) b) 
+                           null)) ; This little lamba fill block type
+           (list
+              (block (point (* pbc B-SIZE) (* (sub1 pbl) B-SIZE)) (point pbc (sub1 pbl)) "e") ; up
+              (block (point (* (add1 pbc) B-SIZE) (* pbl B-SIZE)) (point (add1 pbc) pbl) "e") ; right
+              (block (point (* pbc B-SIZE) (* (add1 pbl) B-SIZE)) (point pbc (add1 pbl)) "e") ; down
+              (block (point (* (sub1 pbc) B-SIZE) (* pbl B-SIZE)) (point (sub1 pbc) pbl) "e")))))) ; left
+
+;; /Entity
+
+;; Enemy
+(define (update/enemies enemies l) enemies)
+
+;; /Enemy
+
+;; Player
+(define (update/player p l)
+  (define new-player (apply-gravity (move-player p l) l))
+  (if (point-equals? (player-position p) (player-position new-player))
+      (center-player-on-block new-player)
+      new-player))
+
+(define (move-player p l)
+  (let ([x (point-x (player-position p))]
+        [y (point-y (player-position p))]
+        [dx 0]
+        [dy 0])
+    (when (and ((actions/up)) (can-player-go? p l UP))
+      (set! dy -1))
+    (when (and ((actions/right)) (can-player-go? p l RIGHT))
+      (set! dx 1))
+    (when (and ((actions/down)) (can-player-go? p l DOWN))
+      (set! dy 1))
+    (when (and ((actions/left)) (can-player-go? p l LEFT))
+      (set! dx -1))
+    (player (point
+              (+ x (* P-SPEED dx))
+              (+ y (* P-SPEED dy)))(get-block l (player-position p) #:mode "upper"))))
+;; /Player
+
 ;; DRAW
 ; Little helper to draw color palette 
 (define (debug/draw-palette)
@@ -180,11 +218,14 @@
     (draw 0 i '(#xff))))
 
 (define (draw/world w)
-  (draw/level (level-indice (world-level w)))
-  (draw/player (world-player w) (level-indice (world-level w))))
+  (define indice (level-indice (world-level w)))
+  (draw/level indice)
+  (draw/player (world-player w) indice)
+  (draw/enemies (world-enemies w) indice))
 
 ; Draw a specific level (l correspond to level indice in asset/levels)
 (define (draw/level i)
+  (color MAP-COLOR)
   (define (draw-block b)
     (let ([x (point-x (block-position b))]
           [y (point-y (block-position b))]
@@ -195,17 +236,27 @@
 
 ; Draw player
 (define (draw/player p l)
+  (color PLAYER-COLOR)
   (let* ([x (point-x (player-position p))]
          [y (point-y (player-position p))]
          [debug-blocks (cons (player-block p) (get-blocks-around-player p l))])
     (draw x y (hash-ref asset/sprites "p"))
-    (color 3)
     (and DEBUG (map (lambda (b)
                       (unless (null? b)
                         (let ([bx (point-x (block-position b))]
                             [by (point-y (block-position b))])
                         (draw bx by (hash-ref asset/sprites "db"))))
                       ) debug-blocks))))
+
+(define (draw/enemies enemies l)
+  (color ENEMY-COLOR)
+  (map ((curry draw/enemy) l) enemies))
+
+; Draw Enemy
+(define (draw/enemy l e)
+  (let ([x (point-x (enemy-position e))]
+         [y (point-y (enemy-position e))])
+    (draw x y (hash-ref asset/sprites "en"))))
 
 ;; HELPERS
 (define (on-level-map i f)
@@ -246,21 +297,6 @@
                (- (point-x cb-pos) (point-x db-pos))
                (- (point-y cb-pos) (point-y db-pos)))])
     dir))
-
-(define (get-blocks-around-player p l)
-  (if (null? (player-block p))
-      (list)
-      (let* ([pb (player-block p)]
-             [pbc (point-x (block-coords pb))]
-             [pbl (point-y (block-coords pb))])
-      (map (lambda (b) (if (block-in-map? b l) 
-                           (begin (set-block-type! b (get-block-type b l)) b) 
-                           null)) ; This little lamba fill block type
-           (list
-              (block (point (* pbc B-SIZE) (* (sub1 pbl) B-SIZE)) (point pbc (sub1 pbl)) "e") ; up
-              (block (point (* (add1 pbc) B-SIZE) (* pbl B-SIZE)) (point (add1 pbc) pbl) "e") ; right
-              (block (point (* pbc B-SIZE) (* (add1 pbl) B-SIZE)) (point pbc (add1 pbl)) "e") ; down
-              (block (point (* (sub1 pbc) B-SIZE) (* pbl B-SIZE)) (point (sub1 pbc) pbl) "e")))))) ; left
 
 ; Check if block coords are in bounds of map 
 (define (block-in-map? b l)
