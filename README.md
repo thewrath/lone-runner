@@ -3,7 +3,11 @@
 ## How to play ? 
 
 ## Todo
-- Use struct inheritance with (struct enemy (position block))
-- Enemy movement
-- Handle player/enemy collision
-- Gold and end game
+- Gold :
+	- win condition
+- Enemy :
+	- spawn
+	- go in random direction
+	- use path finding algorithm
+- Handle player/enemy collision :
+	- handle loose
