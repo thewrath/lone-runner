@@ -21,15 +21,19 @@
 (define DOWN-LEFT 5)
 
 (define PLAYER-COLOR 2)
-(define MAP-COLOR 1)
+(define WALL-COLOR 1)
+(define BORDER-COLOR 7)
+(define LADDER-COLOR 5)
+(define CHEST-COLOR 6)
 (define ENEMY-COLOR 3)
 (define TEXT-COLOR 4)
 
 (define HUD-X 15)
 (define HUD-Y 15)
 
-(define LEVEL-GOLD 200)
+(define LEVEL-GOLD 300)
 
+(define HOLE-TIMER 2)
 
 (define debug-text "debug")
 
@@ -42,31 +46,31 @@
                          (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "c" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "w" "l" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "w")
+                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "w" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "c" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "c" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "w" "l" "w" "w" "w" "w" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
                          )))
 
@@ -111,6 +115,14 @@
                               #b10000001
                               #b10000001
                               #b01111110)
+                        "h" '(
+                              #b00000000
+                              #b00000000  
+                              #b10000001
+                              #b11000011
+                              #b10111101
+                              #b10000001
+                              #b01111110)
                         "c" '(
                               #b00000000
                               #b00000000  
@@ -119,6 +131,12 @@
                               #b10010001
                               #b10000001
                               #b11111111)))
+
+(define block-colors (hash 
+                      "w" WALL-COLOR
+                      "l" LADDER-COLOR
+                      "c" CHEST-COLOR
+                    ))
 
 ; Define all primitive of our game
 (struct point (x y) #:transparent #:mutable)
@@ -150,7 +168,8 @@
   (define l (world-level w))
   (define e (update/enemies (world-enemies w) (level-indice l)))
   (define p (update/player (world-player w) (level-indice l)))
-  (begin 
+  (begin
+    (update/holes (level-indice l)) 
     (world p e l)))
 
 ;; Entity
@@ -258,6 +277,20 @@
 
 ;; /Player
 
+;; Hole
+(define fill-hole-timer (timer 1 #:loop #t))
+(define (update/holes l)
+  (when (fill-hole-timer)
+    (on-level-map l 
+                  (lambda (b)
+                    (let ([t (block-type b)])
+                      (when (number? t)
+                        (if (= 0 t)
+                            (persist-block! (block (block-position b) (block-coords b) "w") l)
+                            (persist-block! (block (block-position b) (block-coords b) (sub1 t)) l))))))))
+
+;; /Hole
+
 ;; DRAW
 ; Little helper to draw color palette 
 (define (debug/draw-palette)
@@ -275,13 +308,16 @@
     ;; HUD
     (draw/player-stats player)))
   
-; Draw a specific level (l correspond to level indice in asset/levels)
+; Draw a specific level (i correspond to level indice in asset/levels)
 (define (draw/level i)
-  (color MAP-COLOR)
   (define (draw-block b)
-    (let ([x (point-x (block-position b))]
+    (let* ([x (point-x (block-position b))]
           [y (point-y (block-position b))]
-          [t (block-type b)])
+          [rt (block-type b)]
+          [t (if (number? rt) "h" rt)]) ; H is hole type, if block is a number it's timer for hole.
+      (if (hash-has-key? block-colors t)
+          (color (hash-ref block-colors t))
+          (color WALL-COLOR))
       (when (hash-has-key? asset/sprites t)
         (draw x y (hash-ref asset/sprites t)))))
   (on-level-map i draw-block))
@@ -358,11 +394,14 @@
 
 ; Turn given block into empty block during 3sec
 (define (dig-block! b l)
-  (when (not (is-block-a-border? b l))
+  (when (is-diggable? b l)
     (persist-block! (block 
                       (block-position b)
                       (block-coords b)
-                      "e") l)))
+                      HOLE-TIMER) l)))
+
+(define (is-diggable? b l)
+  (and (not (is-block-a-border? b l)) (equal? "w" (get-block-type b l))))
 
 ; Get direction from cb block to db block
 (define (get-block-direction cb db)
