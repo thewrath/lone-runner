@@ -17,6 +17,8 @@
 (define RIGHT 1)
 (define DOWN 2)
 (define LEFT 3)
+(define DOWN-RIGHT 4)
+(define DOWN-LEFT 5)
 
 (define PLAYER-COLOR 2)
 (define MAP-COLOR 1)
@@ -141,15 +143,14 @@
 (define (actions/right) (action btn-right #t))
 (define (actions/down) (action btn-down #t))
 (define (actions/left) (action btn-left #t))
-(define (actions/display-current-block) (action btn-z))
+(define (actions/dig-right) (action btn-x))
+(define (actions/dig-left) (action btn-z))
 
-(define (update/world w) 
+(define (update/world w)
   (define l (world-level w))
   (define e (update/enemies (world-enemies w) (level-indice l)))
   (define p (update/player (world-player w) (level-indice l)))
   (begin 
-    (when ((actions/display-current-block))
-      (set! debug-text (get-block (level-indice l) (entity-position p) #:mode "upper")))
     (world p e l)))
 
 ;; Entity
@@ -165,6 +166,7 @@
 (define (can-entity-go? e l dir)
   (let* ([blocks (get-blocks-around-entity e l)]
          [block (list-ref blocks dir)]) 
+    ;; Fixme : need to check if blocks isn't empty
     (and 
       (not (null? block)) 
       (not (equal? "w" (block-type block))))))
@@ -191,7 +193,9 @@
                (block (point (* pbc B-SIZE) (* (sub1 pbl) B-SIZE)) (point pbc (sub1 pbl)) "e") ; up
                (block (point (* (add1 pbc) B-SIZE) (* pbl B-SIZE)) (point (add1 pbc) pbl) "e") ; right
                (block (point (* pbc B-SIZE) (* (add1 pbl) B-SIZE)) (point pbc (add1 pbl)) "e") ; down
-               (block (point (* (sub1 pbc) B-SIZE) (* pbl B-SIZE)) (point (sub1 pbc) pbl) "e")))))) ; left
+               (block (point (* (sub1 pbc) B-SIZE) (* pbl B-SIZE)) (point (sub1 pbc) pbl) "e") ; left
+               (block (point (* (sub1 pbc) B-SIZE) (* (add1 pbl) B-SIZE)) (point (add1 pbc) (add1 pbl)) "e") ; down-right
+               (block (point (* (add1 pbc) B-SIZE) (* (add1 pbl) B-SIZE)) (point (sub1 pbc) (add1 pbl)) "e")))))) ; down-left
 
 ;; /Entity
 
@@ -217,10 +221,13 @@
 ;; Player
 (define (update/player p l)
   (define new-player (move-player p l))
+  (define blocks (get-blocks-around-entity p l))
   (begin0
     new-player
     (apply-gravity! new-player l)
     (collect-gold! new-player l)
+    (when (and ((actions/dig-right)) (not (empty? blocks))) (dig-block! (list-ref blocks DOWN-RIGHT) l))
+    (when (and ((actions/dig-left)) (not (empty? blocks))) (dig-block! (list-ref blocks DOWN-LEFT) l))
     (when (point-equals? (entity-position p) (entity-position new-player))
       (center-entity-on-block! new-player))))
 
@@ -349,6 +356,14 @@
           [level (vector-ref asset/levels l)])
       (vector-set! (vector-ref level bl) bc bt))))
 
+; Turn given block into empty block during 3sec
+(define (dig-block! b l)
+  (when (not (is-block-a-border? b l))
+    (persist-block! (block 
+                      (block-position b)
+                      (block-coords b)
+                      "e") l)))
+
 ; Get direction from cb block to db block
 (define (get-block-direction cb db)
   (let* ([cb-pos (block-position cb)]
@@ -366,6 +381,14 @@
     (and
       (and (< bl (vector-length level)) (>= bl 0))
       (and (< bc (vector-length (vector-ref level bl))) (>= bc 0)))))
+
+(define (is-block-a-border? b l)
+  (let ([bc (point-x (block-coords b))]
+        [bl (point-y (block-coords b))]
+        [level (vector-ref asset/levels l)])
+    (or 
+      (or (= bl 0) (>= bl (sub1 (vector-length level))))
+      (or (= bc 0) (>= bc (sub1 (vector-length (vector-ref level bl))))))))
 
 (define (get-block-type b l) 
   (let ([bc (point-x (block-coords b))]
