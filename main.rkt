@@ -20,8 +20,13 @@
 (define DOWN-RIGHT 4)
 (define DOWN-LEFT 5)
 
+(define DEFAULT-COLOR 1)
+(define DEBUG-COLOR 3)
+(define WIN-COLOR 8)
+
 (define PLAYER-COLOR 2)
 (define WALL-COLOR 1)
+(define DOOR-COLOR 8)
 (define BORDER-COLOR 7)
 (define LADDER-COLOR 5)
 (define CHEST-COLOR 6)
@@ -31,13 +36,34 @@
 (define HUD-X 15)
 (define HUD-Y 15)
 
-(define LEVEL-GOLD 300)
+(define LEVEL-GOLD 400)
 
 (define HOLE-TIMER 2)
 
+(define state 'PLAY) ;; PLAY, WIN or LOSE
+
 (define debug-text "debug")
 
-; Levels definitons
+
+; Define all primitive of our game
+(struct point (x y) #:transparent #:mutable)
+(struct block (position coords type) #:transparent #:mutable)
+(struct entity (position block) #:transparent #:mutable)
+(struct player entity (gold) #:transparent #:mutable)
+(struct enemy entity () #:transparent #:mutable)
+(struct level (indice gold) #:transparent)
+(struct world (player enemies level) #:transparent)
+
+(define (point-equals? a b) 
+  (and 
+    (= (point-x a) (point-x b)) 
+    (= (point-y a) (point-y b))))
+
+(define (point-add a b)
+  (point (+ (point-x a) (point-x b)) (+ (point-y a) (point-y b))))
+
+; Levels definitons 
+(define door (block (point 0 0) (point 6 12) "d"))
 (define asset/levels (vector
                        (vector
                          (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
@@ -55,22 +81,22 @@
                          (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "w" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "c" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "c" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "w" "w" "l" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "c" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "c" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "w" "l" "w" "w" "w" "w" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
+                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "e" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
+                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
                          (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
                          )))
 
@@ -83,6 +109,14 @@
                               #b01000010
                               #b01000010
                               #b01000010)
+                        "d" '(
+                              #b11111111
+                              #b10000001
+                              #b10000001
+                              #b10000001
+                              #b10000101
+                              #b10000001
+                              #b10000001)
                         "l" '(
                               #b01000010
                               #b01000010
@@ -91,6 +125,14 @@
                               #b01000010
                               #b01000010
                               #b01000010)
+                        "r" '(
+                              #b11111111
+                              #b00000000
+                              #b00000000
+                              #b00000000
+                              #b00000000
+                              #b00000000
+                              #b00000000)
                         "db" '(
                                #b01111110
                                #b10000001
@@ -134,43 +176,31 @@
 
 (define block-colors (hash 
                       "w" WALL-COLOR
+                      "d" DOOR-COLOR
                       "l" LADDER-COLOR
+                      "r" LADDER-COLOR
                       "c" CHEST-COLOR
                     ))
 
-; Define all primitive of our game
-(struct point (x y) #:transparent #:mutable)
-(struct block (position coords type) #:transparent #:mutable)
-(struct entity (position block) #:transparent #:mutable)
-(struct player entity (gold) #:transparent #:mutable)
-(struct enemy entity () #:transparent #:mutable)
-(struct level (indice gold) #:transparent)
-(struct world (player enemies level) #:transparent)
-
-(define (point-equals? a b) 
-  (and 
-    (= (point-x a) (point-x b)) 
-   	(= (point-y a) (point-y b))))
-
-(define (point-add a b)
-  (point (+ (point-x a) (point-x b)) (+ (point-y a) (point-y b))))
-
 ;; UPDATE
-; Player actions
-(define (actions/up) (action btn-up #t))
-(define (actions/right) (action btn-right #t))
-(define (actions/down) (action btn-down #t))
-(define (actions/left) (action btn-left #t))
-(define (actions/dig-right) (action btn-x))
-(define (actions/dig-left) (action btn-z))
 
+;; World
 (define (update/world w)
   (define l (world-level w))
   (define e (update/enemies (world-enemies w) (level-indice l)))
   (define p (update/player (world-player w) (level-indice l)))
   (begin
-    (update/holes (level-indice l)) 
+    (update/holes (level-indice l))
+    (when (level-done? p) (persist-block! door (level-indice l)))
+    (when (win? p) (set! state 'WIN))
+    (when (lose? p) (set! state 'LOSE))
     (world p e l)))
+
+(define (level-done? p) (= (player-gold p) LEVEL-GOLD))
+(define (win? p) (equal? "d" (block-type (entity-block p))))
+(define (lose? p) #f)
+
+;; /World
 
 ;; Entity
 
@@ -196,7 +226,7 @@
          [x (point-x position)]
          [y (point-y position)]
          [b (entity-block e)])
-    (when (and (can-entity-go? e l DOWN) (not (equal? "l" (block-type b))))
+    (when (and (can-entity-go? e l DOWN) (not (member (block-type b) '("l" "r"))))
       (set-entity-position! e (point x (+ y GRAVITY))))))
 
 (define (get-blocks-around-entity e l)
@@ -238,6 +268,15 @@
 ;; /Enemy
 
 ;; Player
+
+; Actions
+(define (actions/up) (action btn-up #t))
+(define (actions/right) (action btn-right #t))
+(define (actions/down) (action btn-down #t))
+(define (actions/left) (action btn-left #t))
+(define (actions/dig-right) (action btn-x))
+(define (actions/dig-left) (action btn-z))
+
 (define (update/player p l)
   (define new-player (move-player p l))
   (define blocks (get-blocks-around-entity p l))
@@ -446,11 +485,22 @@
 
 (define (game-loop)
   (cls)
-  (color 1)
-  (set! my-world (update/world my-world))
-  (draw/world my-world)
-  (color 3)
+  (color DEFAULT-COLOR)
+  (cond 
+    [(eq? state 'PLAY) 
+     (set! my-world (update/world my-world))
+     (draw/world my-world)]
+    [(eq? state 'WIN) 
+     (draw/world my-world)
+     (color WIN-COLOR)
+     (text (/ M-WIDTH 2) (/ M-HEIGHT 2) "You win!")]
+    [(eq? state 'LOSE) 
+     (draw/world my-world)
+     (color WIN-COLOR)
+     (text (/ M-WIDTH 2) (/ M-HEIGHT 2) "You lose!")])
+  
+  ;; Debug
+  (color DEBUG-COLOR)
   (and DEBUG (text 0 50 debug-text)))
-;(draw 50 0 (hash-ref asset/sprites "player"))
 
 (run game-loop M-WIDTH M-HEIGHT #:scale 2 #:shader #f)
