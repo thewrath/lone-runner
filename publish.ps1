@@ -1,0 +1,1 @@
+raco exe --embed-dlls main.rkt
