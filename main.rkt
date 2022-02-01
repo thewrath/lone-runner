@@ -50,7 +50,7 @@
 (struct block (position coords type) #:transparent #:mutable)
 (struct entity (position block) #:transparent #:mutable)
 (struct player entity (gold) #:transparent #:mutable)
-(struct enemy entity () #:transparent #:mutable)
+(struct enemy entity (direction) #:transparent #:mutable)
 (struct level (indice gold) #:transparent)
 (struct world (player enemies level) #:transparent)
 
@@ -214,9 +214,10 @@
 
 (define (can-entity-go? e l dir)
   (let* ([blocks (get-blocks-around-entity e l)]
-         [block (list-ref blocks dir)]) 
-    ;; Fixme : need to check if blocks isn't empty
-    (and 
+         [block (if (> (length blocks) dir)
+                    (list-ref blocks dir)
+                    null)]) 
+    (and
       (not (null? block)) 
       (not (equal? "w" (block-type block))))))
 
@@ -257,13 +258,36 @@
   (begin0
     new-enemy
     (apply-gravity! new-enemy l)
+    (change-direction! new-enemy l)
     (when (point-equals? (entity-position e) (entity-position new-enemy))
       (center-entity-on-block! new-enemy))))
 
 (define (move-enemy e l)
   (let ([x (point-x (entity-position e))]
-        [y (point-y (entity-position e))])
-    (enemy (point x y) (get-block l (entity-position e) #:mode "upper"))))
+        [y (point-y (entity-position e))]
+        [direction (enemy-direction e)]
+        [dx 0]
+        [dy 0])
+    (when (and (= direction UP) (can-entity-go? e l UP))
+      (set! dy -1))
+    (when (and (= direction RIGHT) (can-entity-go? e l RIGHT))
+      (set! dx 1))
+    (when (and (= direction DOWN) (can-entity-go? e l DOWN))
+      (set! dy 1))
+    (when (and (= direction LEFT) (can-entity-go? e l LEFT))
+      (set! dx -1))
+    (enemy (point
+              (+ x (* P-SPEED dx))
+              (+ y (* P-SPEED dy)))
+           (get-block l (entity-position e) #:mode "upper") direction)))
+
+(define (change-direction! e l)
+  (begin0
+    e
+    (cond [(not (can-entity-go? e l RIGHT)) (set-enemy-direction! e LEFT)]
+          [(not (can-entity-go? e l LEFT)) (set-enemy-direction! e RIGHT)])))
+
+(define (get-random-direction) (random UP DOWN)) ; Right or Left
 
 ;; /Enemy
 
@@ -477,7 +501,7 @@
 ;; INIT
 (define (init)
   (define p (player (point 50 50) null 0))
-  (define e (list (enemy (point 10 10) null)))
+  (define e (list (enemy (point 10 10) null (get-random-direction))))
   (define l (level 0 300))
   (world p e l))
 
