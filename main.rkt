@@ -11,6 +11,7 @@
 (define HALF-B-SIZE (/ B-SIZE 2))
 
 (define P-SPEED 1)
+(define E-SPEED 0.5)
 (define GRAVITY 2)
 
 (define UP 0)
@@ -50,7 +51,7 @@
 (struct block (position coords type) #:transparent #:mutable)
 (struct entity (position block) #:transparent #:mutable)
 (struct player entity (gold) #:transparent #:mutable)
-(struct enemy entity (direction) #:transparent #:mutable)
+(struct enemy entity (direction state) #:transparent #:mutable)
 (struct level (indice gold) #:transparent)
 (struct world (player enemies level) #:transparent)
 
@@ -213,13 +214,10 @@
                               (point-y (block-position b)))))))
 
 (define (can-entity-go? e l dir)
-  (let* ([blocks (get-blocks-around-entity e l)]
-         [block (if (> (length blocks) dir)
-                    (list-ref blocks dir)
-                    null)]) 
+  (let ([block (get-block-in-dir e l dir)])
     (and
       (not (null? block)) 
-      (not (equal? "w" (block-type block))))))
+      (not (equal? "w" (block-type block))))))  
 
 ; Apply gravity to a player/enemy
 (define (apply-gravity! e l)
@@ -247,6 +245,12 @@
                (block (point (* (sub1 pbc) B-SIZE) (* (add1 pbl) B-SIZE)) (point (add1 pbc) (add1 pbl)) "e") ; down-right
                (block (point (* (add1 pbc) B-SIZE) (* (add1 pbl) B-SIZE)) (point (sub1 pbc) (add1 pbl)) "e")))))) ; down-left
 
+(define (get-block-in-dir e l dir)
+  (let ([blocks (get-blocks-around-entity e l)])
+    (if (> (length blocks) dir)
+        (list-ref blocks dir)
+        null)))
+  
 ;; /Entity
 
 ;; Enemy
@@ -258,7 +262,9 @@
   (begin0
     new-enemy
     (apply-gravity! new-enemy l)
-    (change-direction! new-enemy l)
+    ;; Todo : si l'enemi grimpe et que le bloc du dessus est du vide => state = free + change direction
+    (and (equal? enemy-state 'free) (change-direction! new-enemy l))
+    (and (equal? enemy-state 'free) (take-ladder! new-enemy l))
     (when (point-equals? (entity-position e) (entity-position new-enemy))
       (center-entity-on-block! new-enemy))))
 
@@ -277,9 +283,11 @@
     (when (and (= direction LEFT) (can-entity-go? e l LEFT))
       (set! dx -1))
     (enemy (point
-              (+ x (* P-SPEED dx))
-              (+ y (* P-SPEED dy)))
-           (get-block l (entity-position e) #:mode "upper") direction)))
+              (+ x (* E-SPEED dx))
+              (+ y (* E-SPEED dy)))
+           (get-block l (entity-position e) #:mode "upper") 
+           direction
+           (enemy-state e))))
 
 (define (change-direction! e l)
   (begin0
@@ -288,6 +296,18 @@
           [(not (can-entity-go? e l LEFT)) (set-enemy-direction! e RIGHT)])))
 
 (define (get-random-direction) (random UP DOWN)) ; Right or Left
+
+(define (take-ladder! e l)
+  (let ([block-up (get-block-in-dir e l UP)]
+        [block-down (get-block-in-dir e l DOWN)])
+    (cond [(is-block-a? block-up "l")
+           (set-enemy-direction! e UP)
+           (set-enemy-state! e 'climbing)
+           (center-entity-on-block! e)]
+          [(is-block-a? block-down "l")
+           (set-enemy-direction! e DOWN)
+           (set-enemy-state! e 'climbing)
+           (center-entity-on-block! e)])))
 
 ;; /Enemy
 
@@ -418,6 +438,7 @@
 ;; HELPERS
 (define (on-level-map i f)
   (let ([x 0] [y 0] [level (vector-ref asset/levels i)])
+    ;; Todo : replace with for*
     (for ([r level])
       (set! x 0)
       (for ([t r])
@@ -466,6 +487,9 @@
 (define (is-diggable? b l)
   (and (not (is-block-a-border? b l)) (equal? "w" (get-block-type b l))))
 
+(define (is-block-a? b t)
+  (and (not (null? b)) (equal? (block-type b) t)))
+
 ; Get direction from cb block to db block
 (define (get-block-direction cb db)
   (let* ([cb-pos (block-position cb)]
@@ -500,8 +524,11 @@
 
 ;; INIT
 (define (init)
-  (define p (player (point 50 50) null 0))
-  (define e (list (enemy (point 10 10) null (get-random-direction))))
+  (define p (player (point (/ M-WIDTH 2) (- M-HEIGHT (* 2 B-SIZE))) null 0))
+  (define e (list 
+              (enemy (point (- M-WIDTH (* 2 B-SIZE)) 10) null (get-random-direction) 'free)
+              (enemy (point 10 10) null (get-random-direction) 'free)
+              (enemy (point (/ M-WIDTH 2) 150) null (get-random-direction) 'free)))
   (define l (level 0 300))
   (world p e l))
 
