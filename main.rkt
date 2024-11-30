@@ -2,13 +2,14 @@
 
 (require r-cade)
 
+(require "asset.rkt")
+
 (define DEBUG #f)
 
 (define M-WIDTH 256)
 (define M-HEIGHT 256)
 
 (define B-SIZE 8)
-(define HALF-B-SIZE (/ B-SIZE 2))
 
 (define P-SPEED 1)
 (define E-SPEED 0.5)
@@ -28,7 +29,6 @@
 (define PLAYER-COLOR 2)
 (define WALL-COLOR 1)
 (define DOOR-COLOR 8)
-(define BORDER-COLOR 7)
 (define LADDER-COLOR 5)
 (define CHEST-COLOR 6)
 (define ENEMY-COLOR 3)
@@ -45,7 +45,6 @@
 
 (define debug-text "debug")
 
-
 ; Define all primitive of our game
 (struct point (x y) #:transparent #:mutable)
 (struct block (position coords type) #:transparent #:mutable)
@@ -60,120 +59,8 @@
     (= (point-x a) (point-x b)) 
     (= (point-y a) (point-y b))))
 
-(define (point-add a b)
-  (point (+ (point-x a) (point-x b)) (+ (point-y a) (point-y b))))
-
-; Levels definitons 
-(define door (block (point 0 0) (point 6 12) "d"))
-(define asset/levels (vector
-                       (vector
-                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "c" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "l" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "r" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "c" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "c" "e" "e" "l" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "w" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w" "w" "l" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "l" "w" "w" "w" "w" "w" "e" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "l" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "e" "w")
-                         (vector "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w" "w")
-                         )))
-
-(define asset/sprites (hash
-                        "p" '(
-                              #b00111100
-                              #b00011000
-                              #b00011000
-                              #b01111110
-                              #b01000010
-                              #b01000010
-                              #b01000010)
-                        "d" '(
-                              #b11111111
-                              #b10000001
-                              #b10000001
-                              #b10000001
-                              #b10000101
-                              #b10000001
-                              #b10000001)
-                        "l" '(
-                              #b01000010
-                              #b01000010
-                              #b01000010
-                              #b01111110
-                              #b01000010
-                              #b01000010
-                              #b01000010)
-                        "r" '(
-                              #b11111111
-                              #b00000000
-                              #b00000000
-                              #b00000000
-                              #b00000000
-                              #b00000000
-                              #b00000000)
-                        "db" '(
-                               #b01111110
-                               #b10000001
-                               #b10010001
-                               #b10111001
-                               #b10010001
-                               #b10000001
-                               #b01111110)
-                        "en" '(
-                               #b10111101
-                               #b01011010
-                               #b00011000
-                               #b01111110
-                               #b01000010
-                               #b01000010
-                               #b01000010)
-                        "w" '(
-                              #b01111110
-                              #b10000001	
-                              #b10000001
-                              #b10000001
-                              #b10000001
-                              #b10000001
-                              #b01111110)
-                        "h" '(
-                              #b00000000
-                              #b00000000  
-                              #b10000001
-                              #b11000011
-                              #b10111101
-                              #b10000001
-                              #b01111110)
-                        "c" '(
-                              #b00000000
-                              #b00000000  
-                              #b01111110
-                              #b10011001
-                              #b10010001
-                              #b10000001
-                              #b11111111)))
+; Todo extract door location from level
+(define door (block (point 0 0) (point 4 14) "d"))
 
 (define block-colors (hash 
                       "w" WALL-COLOR
@@ -214,10 +101,13 @@
                               (point-y (block-position b)))))))
 
 (define (can-entity-go? e l dir)
-  (let ([block (get-block-in-dir e l dir)])
+  (let (
+    [block-in-dir (get-block-in-dir e l dir)]
+    [block (get-block l (entity-position e) #:mode "upper")])
     (and
-      (not (null? block)) 
-      (not (equal? "w" (block-type block))))))  
+      (not (null? block-in-dir)) 
+      (not (equal? "w" (block-type block-in-dir)))
+      (or (not (equal? UP dir)) (equal? "l" (block-type block))))))
 
 ; Apply gravity to a player/enemy
 (define (apply-gravity! e l)
@@ -318,12 +208,12 @@
 (define (actions/right) (action btn-right #t))
 (define (actions/down) (action btn-down #t))
 (define (actions/left) (action btn-left #t))
-(define (actions/dig-right) (action btn-x))
-(define (actions/dig-left) (action btn-z))
+(define (actions/dig-right) (action btn-x #f))
+(define (actions/dig-left) (action btn-z #f))
 
 (define (update/player p l)
-  (define new-player (move-player p l))
   (define blocks (get-blocks-around-entity p l))
+  (define new-player (move-player p l))
   (begin0
     new-player
     (apply-gravity! new-player l)
@@ -333,6 +223,7 @@
     (when (point-equals? (entity-position p) (entity-position new-player))
       (center-entity-on-block! new-player))))
 
+;; Todo merge this with move-enemy
 (define (move-player p l)
   (let ([x (point-x (entity-position p))]
         [y (point-y (entity-position p))]
@@ -375,11 +266,6 @@
 ;; /Hole
 
 ;; DRAW
-; Little helper to draw color palette 
-(define (debug/draw-palette)
-  (for ([i (range 16)])
-    (color i)
-    (draw 0 i '(#xff))))
 
 (define (draw/world w)
   (let* ([indice (level-indice (world-level w))]
@@ -387,7 +273,7 @@
          [enemies (world-enemies w)])
     (draw/level indice)
     (draw/player player indice)
-    (draw/enemies enemies indice)
+    (draw/enemies enemies)
     ;; HUD
     (draw/player-stats player)))
   
@@ -425,12 +311,12 @@
                           (draw bx by (hash-ref asset/sprites "db"))))
                       ) debug-blocks))))
 
-(define (draw/enemies enemies l)
+(define (draw/enemies enemies)
   (color ENEMY-COLOR)
-  (map ((curry draw/enemy) l) enemies))
+  (map draw/enemy enemies))
 
 ; Draw Enemy
-(define (draw/enemy l e)
+(define (draw/enemy e)
   (let ([x (point-x (entity-position e))]
         [y (point-y (entity-position e))])
     (draw x y (hash-ref asset/sprites "en"))))
@@ -445,12 +331,6 @@
         (f (block (point (* x B-SIZE) (* y B-SIZE)) (point x y) t))
         (set! x (add1 x)))
       (set! y (add1 y)))))
-
-(define (on-level-row i f)
-  (let ([x 0])
-    (for ([c (vector-ref (vector-ref asset/levels i) 0)])
-      (f x c)
-      (set! x (+ x B-SIZE)))))
 
 ;; Return block under a given point for a given level
 (define (get-block l p #:mode mode)
@@ -489,15 +369,6 @@
 
 (define (is-block-a? b t)
   (and (not (null? b)) (equal? (block-type b) t)))
-
-; Get direction from cb block to db block
-(define (get-block-direction cb db)
-  (let* ([cb-pos (block-position cb)]
-         [db-pos (block-position db)]
-         [dir (point 
-                (- (point-x cb-pos) (point-x db-pos))
-                (- (point-y cb-pos) (point-y db-pos)))])
-    dir))
 
 ; Check if block coords are in bounds of map 
 (define (block-in-map? b l)
@@ -554,4 +425,4 @@
   (color DEBUG-COLOR)
   (and DEBUG (text 0 50 debug-text)))
 
-(run game-loop M-WIDTH M-HEIGHT #:scale 2 #:shader #f)
+(run game-loop M-WIDTH M-HEIGHT #:scale 2 #:shader #t)
